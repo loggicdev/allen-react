@@ -9,7 +9,7 @@ import type { OnboardingQuestion } from "@/lib/onboarding"
 type UserInsert = Database["public"]["Tables"]["users"]["Insert"]
 type User = Database["public"]["Tables"]["users"]["Row"]
 
-export async function signUpAndCreateProfile(email: string, onboardingData: Record<string, any>) {
+export async function signUpAndCreateProfile(email: string, onboardingData: Record<string, any>, password?: string) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error("Supabase environment variables are not configured on the server.")
   }
@@ -21,7 +21,7 @@ export async function signUpAndCreateProfile(email: string, onboardingData: Reco
 
   const { data, error: signUpError } = await supabaseAnon.auth.signUp({
     email: email,
-    password: Math.random().toString(36).slice(-12) + "Aa1!", // Gerar uma senha temporária
+    password: password || Math.random().toString(36).slice(-12) + "Aa1!", // Usar senha fornecida ou gerar uma temporária
     options: {
       data: {
         name: onboardingData.name,
@@ -44,7 +44,8 @@ export async function signUpAndCreateProfile(email: string, onboardingData: Reco
     id: data.user.id,
     name: onboardingData.name || "",
     phone: onboardingData.phone || "",
-    nickname: onboardingData.nickname || ""
+    nickname: onboardingData.nickname || "",
+    email: email
   }
 
   try {

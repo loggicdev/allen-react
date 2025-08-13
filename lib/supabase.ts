@@ -66,6 +66,8 @@ export const isSupabaseConfigured = () => {
   // Only log once per session
   if (!configLoggedOnce) {
     console.log("🔧 Supabase configured:", configured)
+    console.log("🔧 supabaseUrl:", supabaseUrl ? "✅ Present" : "❌ Missing", supabaseUrl?.slice(0, 30) + "...")
+    console.log("🔧 supabaseAnonKey:", supabaseAnonKey ? "✅ Present" : "❌ Missing", supabaseAnonKey?.slice(0, 30) + "...")
     configLoggedOnce = true
   }
   return configured

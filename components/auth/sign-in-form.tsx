@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useActionState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -17,12 +17,12 @@ export function SignInForm() {
   const [password, setPassword] = useState("")
   const [state, formAction, isPending] = useActionState(signIn, null)
 
-  const handleSubmit = async (formData: FormData) => {
-    const result = await formAction(formData)
-    if (result && !result.error) {
+  // Redirecionar quando o login for bem-sucedido
+  useEffect(() => {
+    if (state && state.data && !state.error) {
       router.push("/dashboard")
     }
-  }
+  }, [state, router])
 
   return (
     <Card className="w-full max-w-md bg-white border-2 border-gray-200 shadow-2xl">
@@ -31,7 +31,7 @@ export function SignInForm() {
         <CardDescription className="text-gray-600">Sign in to continue your fitness journey.</CardDescription>
       </CardHeader>
       <CardContent className="p-8 space-y-6">
-        <form action={handleSubmit} className="space-y-4">
+        <form action={formAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
@@ -97,7 +97,7 @@ export function SignInForm() {
           </Link>
           <p>
             Don't have an account?{" "}
-            <Link href="/" className="underline hover:text-black">
+            <Link href="/onboarding" className="underline hover:text-black">
               Start Onboarding
             </Link>
           </p>
