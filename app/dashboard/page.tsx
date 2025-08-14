@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/components/auth-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -28,6 +30,10 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 
 export default function FitnessDashboard() {
+  const router = useRouter();
+  const { user, profile, loading } = useAuth();
+  
+  // All hooks must be declared before any conditional returns
   const [activeTab, setActiveTab] = useState("summary")
   const [userData, setUserData] = useState<any>(null)
   const [selectedWorkout, setSelectedWorkout] = useState<any>(null)
@@ -51,6 +57,22 @@ export default function FitnessDashboard() {
   const [selectedDay, setSelectedDay] = useState("monday")
   const [selectedMeal, setSelectedMeal] = useState<any>(null)
 
+  // Estado de carregamento para o avatar
+  const [showFinalAvatar, setShowFinalAvatar] = useState(false);
+
+  const [progressPhotos, setProgressPhotos] = useState([
+    { date: "2024-01-01", weight: "74.0", image: "/placeholder.svg?height=200&width=150" },
+    { date: "2024-01-15", weight: "73.2", image: "/placeholder.svg?height=200&width=150" },
+    { date: "2024-02-01", weight: "72.8", image: "/placeholder.svg?height=200&width=150" },
+    { date: "2024-02-15", weight: "72.4", image: "/placeholder.svg?height=200&width=150" },
+  ])
+  
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/auth/signin");
+    }
+  }, [user, loading, router]);
+
   useEffect(() => {
     const savedData = localStorage.getItem("onboardingData")
     if (savedData) {
@@ -58,9 +80,46 @@ export default function FitnessDashboard() {
     }
   }, [])
 
-  const user = {
-    name: userData?.name || "Alex Johnson",
-    avatar: "/placeholder.svg?height=80&width=80",
+  // Efeito para detectar quando o perfil está totalmente carregado
+  useEffect(() => {
+    if (profile?.name && profile.name !== "Usuário" && !loading) {
+      // Pequeno delay para garantir estabilidade
+      const timer = setTimeout(() => {
+        setShowFinalAvatar(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowFinalAvatar(false);
+    }
+  }, [profile?.name, loading]);
+
+  // Loading state: só renderiza o dashboard quando temos o perfil carregado
+  if (loading || !user || !profile?.name || profile.name === "Usuário") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-gray-300 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading your dashboard...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  // Função para gerar iniciais do usuário
+  const getUserInitials = (name: string) => {
+    const words = name.trim().split(" ").filter(word => word.length > 0);
+    if (words.length >= 2) {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    } else if (words.length === 1) {
+      return words[0][0].toUpperCase();
+    }
+    return "";
+  };
+
+  const userObj = {
+    name: profile.name,
+    initials: getUserInitials(profile.name),
+    avatar: null,
     subscriptionStatus: "active",
     nextRenewal: "2024-02-15",
     goals: [
@@ -96,12 +155,6 @@ export default function FitnessDashboard() {
       videoId: "rT7DgCr-3pg",
     },
   ]
-
-  const [progressPhotos, setProgressPhotos] = useState([
-    { date: "2024-01-01", weight: "74.0", image: "/placeholder.svg?height=200&width=150" },
-    { date: "2024-01-15", weight: "73.2", image: "/placeholder.svg?height=200&width=150" },
-    { date: "2024-02-01", weight: "72.5", image: "/placeholder.svg?height=200&width=150" },
-  ])
 
   const weeklyMealPlan = {
     monday: {
@@ -378,23 +431,24 @@ export default function FitnessDashboard() {
             <Card className="bg-black text-white border-2 border-gray-200 shadow-lg">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-4">
-                  <Avatar className="h-16 w-16 border-2 border-white">
-                    <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                    <AvatarFallback className="bg-white text-black font-bold">
-                      {user.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .toUpperCase()}
+                  <Avatar className="h-16 w-16">
+                    <AvatarFallback className="bg-gray-500 text-white font-bold text-lg border-2 border-white">
+                      {showFinalAvatar ? (
+                        userObj.initials
+                      ) : (
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                        </div>
+                      )}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <h1 className="text-2xl font-bold">{user.name}</h1>
+                    <h1 className="text-2xl font-bold">{userObj.name}</h1>
                     <div className="flex items-center space-x-2 mt-2">
-                      <Badge className={getStatusColor(user.subscriptionStatus)}>
-                        {getStatusText(user.subscriptionStatus)}
+                      <Badge className={getStatusColor(userObj.subscriptionStatus)}>
+                        {getStatusText(userObj.subscriptionStatus)}
                       </Badge>
-                      <span className="text-sm opacity-90">Renews: {user.nextRenewal}</span>
+                      <span className="text-sm opacity-90">Renews: {userObj.nextRenewal}</span>
                     </div>
                   </div>
                 </div>
@@ -430,24 +484,13 @@ export default function FitnessDashboard() {
             {/* Quick Actions / Welcome Message */}
             <Card className="bg-gray-100 border-2 border-gray-300 shadow-lg">
               <CardContent className="p-4">
-                {userData ? (
-                  <div className="text-center">
-                    <h3 className="text-black font-semibold mb-2">Welcome to your Journey, {userData.name}! 🎉</h3>
-                    <p className="text-gray-600 text-sm mb-3">
-                      Your personalized fitness plan is being created based on your onboarding responses.
-                    </p>
-                    <Badge className="bg-black text-white">Plan ready in 24 hours</Badge>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <h3 className="text-black font-semibold mb-2">Need help reaching your goals?</h3>
-                    <p className="text-gray-600 text-sm mb-3">Chat with our AI and get a tailored plan just for you.</p>
-                    <Button className="bg-black hover:bg-gray-800 text-white font-semibold py-2 px-4 text-sm">
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Chat on WhatsApp
-                    </Button>
-                  </div>
-                )}
+                <div className="text-center">
+                  <h3 className="text-black font-semibold mb-2">Welcome to your Journey, {userObj.name}! 🎉</h3>
+                  <p className="text-gray-600 text-sm mb-3">
+                    Your personalized fitness plan is being created based on your onboarding responses.
+                  </p>
+                  <Badge className="bg-black text-white">Plan ready in 24 hours</Badge>
+                </div>
               </CardContent>
             </Card>
 

@@ -221,7 +221,7 @@ export async function signIn(prevState: any, formData: FormData) {
     return { error: error.message }
   }
   console.log("✅ Server Action: User signed in:", data.user?.id)
-  return { data, error: null }
+  return { data, error: null, success: true }
 }
 
 export async function signOut() {

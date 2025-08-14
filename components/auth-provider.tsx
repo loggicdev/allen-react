@@ -72,13 +72,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(initialUser)
         
         if (initialUser) {
+          console.log("🔍 Fetching profile for user:", initialUser.id, initialUser.email)
           try {
             const userProfile = await getUserProfileClient(initialUser.id)
+            console.log("✅ User profile fetched:", userProfile)
             if (!isCancelled) {
               setProfile(userProfile as UserProfile)
             }
           } catch (error) {
-            console.error("Error fetching user profile:", error)
+            console.error("❌ Error fetching user profile:", error)
             if (!isCancelled) {
               setProfile(null)
             }
@@ -92,19 +94,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (isCancelled) return
           
           setUser(session?.user ?? null)
+          console.log("👤 Auth state changed. User:", session?.user?.email, "ID:", session?.user?.id)
           if (session?.user) {
             try {
               const userProfile = await getUserProfileClient(session.user.id)
+              console.log("✅ Profile loaded on auth change:", userProfile)
               if (!isCancelled) {
                 setProfile(userProfile as UserProfile)
               }
             } catch (error) {
-              console.error("Error fetching user profile:", error)
+              console.error("❌ Error fetching user profile on auth change:", error)
               if (!isCancelled) {
                 setProfile(null)
               }
             }
           } else {
+            console.log("🚪 User signed out")
             if (!isCancelled) {
               setProfile(null)
             }
